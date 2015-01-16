@@ -108,7 +108,7 @@ class Base(object):
     def to_json(self, dump_data=True):
         """Generic json
         """
-        lines = super(AmServ, self).parse()
+        lines = self.parse()
 
         cleaned_data = []
         for i, line in enumerate(lines):
@@ -148,6 +148,8 @@ class Base(object):
 
             cleaned_data.append(cleaned)
 
+        # pprint(cleaned_data)
+
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
                 json.dump(cleaned_data, outfile)
@@ -163,7 +165,7 @@ class Base(object):
         json_list = self.to_json(False)
 
         if not json_list:
-            raise
+            return
 
         cleaned_data = []
         for i in json_list:
@@ -196,58 +198,31 @@ class GovHosp(Base):
     type = 0
 
     def to_json(self, dump_data=True):
-        lines = super(GovHosp, self).parse()
+        cleaned_data = super(GovHosp, self).to_json(False)
 
-        cleaned_data = []
-        for i, line in enumerate(lines):
-            data = line.split('\n')
-            cleaned = {
-                i: {
-                    "name": "",
-                    "address": "",
-                    "contact": "",
-                    "website": "",
-                    "type": self.type
-                }
-            }
+        if not cleaned_data:
+            return
 
-            for j, d in enumerate(data):
-                # Uncomment to inspect raw data
-                # print j
-                # pprint(d)
+        # # Append type to clean_data
+        new_cleaned_data = []
+        for i in cleaned_data:
+            for k in i.keys():
+                i[k]["type"] = self.type
+            new_cleaned_data.append(i)
 
-                if j == 0:
-                    cleaned[i]["name"] = d
-
-                elif "Tel: " in d:
-                    for _ in d.split(','):
-                        if "Tel: " in _:
-                            cleaned[i]["contact"] = _.replace("Tel: ", "")
-
-                elif "http" in d:
-                    cleaned[i]["website"] = d
-
-                elif cleaned[i]["contact"] == "" and \
-                     not "As featured in" in d:
-
-                    if cleaned[i]["address"]:
-                        cleaned[i]["address"] += " %s" % d
-                    else:
-                        cleaned[i]["address"] = d
-
-            cleaned_data.append(cleaned)
+        # pprint(new_cleaned_data)
 
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
-                json.dump(cleaned_data, outfile)
+                json.dump(new_cleaned_data, outfile)
         else:
-            return cleaned_data
+            return new_cleaned_data
 
     def to_django(self, model, dump_data=True):
         json_list = self.to_json(False)
 
         if not json_list:
-            raise
+            return
 
         cleaned_data = []
         for i in json_list:
@@ -259,7 +234,7 @@ class GovHosp(Base):
                         "address": data["address"],
                         "contact": data["contact"],
                         "website": data["website"],
-                        "type": self.type,
+                        "type": self.type
                     },
                     "model": model,
                     "pk": k,
