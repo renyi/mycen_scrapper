@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from pprint import pprint
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 GOV_HOSP_URL = "http://www.mycen.com.my/malaysia/hospital_government.html"
@@ -40,14 +41,14 @@ class Base(object):
         if json_filename:
             self.json_filename = json_filename
 
-    def get_html(self):
+    def get_html(self, dumpdata=False):
         """Get html.
         """
         if not self.url:
             return None
 
         url = self.url
-        dumpdata = self.dumpdata
+        dumpdata = dumpdata if dumpdata else self.dumpdata
         filename = self.raw_filename
 
         if not filename:
@@ -123,9 +124,8 @@ class Base(object):
             }
 
             for j, d in enumerate(data):
-                # Uncomment to inspect raw data
-                # print j
-                # pprint(d)
+                logger.debug(j)
+                logger.debug(d)
 
                 if j == 0:
                     cleaned[i]["name"] = d
@@ -148,7 +148,7 @@ class Base(object):
 
             cleaned_data.append(cleaned)
 
-        # pprint(cleaned_data)
+        logger.debug(cleaned_data)
 
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
@@ -184,6 +184,8 @@ class Base(object):
                 }
             cleaned_data.append(cleaned)
 
+        logger.debug(cleaned_data)
+
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
                 json.dump(cleaned_data, outfile)
@@ -210,7 +212,7 @@ class GovHosp(Base):
                 i[k]["type"] = self.type
             new_cleaned_data.append(i)
 
-        # pprint(new_cleaned_data)
+        logger.debug(new_cleaned_data)
 
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
@@ -241,6 +243,8 @@ class GovHosp(Base):
                 }
             cleaned_data.append(cleaned)
 
+        logger.debug(cleaned_data)
+
         if self.json_filename and dump_data:
             with open(self.json_filename, 'w') as outfile:
                 json.dump(cleaned_data, outfile)
@@ -264,12 +268,14 @@ class AmServ(Base):
 if __name__ == '__main__':
     g = GovHosp(json_filename='../fixtures/hospitals.json')
     data = g.to_django("hospital.hospital")
-    # pprint(data)
+    logger.debug(data)
 
     p = PriHosp(json_filename='../fixtures/private_hospitals.json')
     data = p.to_django("hospital.hospital")
-    # pprint(data)
+    logger.debug(data)
 
     a = AmServ(json_filename="../fixtures/ambulanceservices.json")
     data = a.to_django("hospital.ambulanceservice")
-    # pprint(data)
+    logger.debug(data)
+
+    print "Done."
